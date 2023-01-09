@@ -1,7 +1,4 @@
 
-//Tamir banay - 311492268
-//Oz benacot - 315860213
-
 package assigg3;
 
 import java.sql.*;
