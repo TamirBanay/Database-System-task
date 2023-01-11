@@ -1,4 +1,5 @@
 
+
 package assigg3;
 
 import java.sql.Connection;
@@ -105,73 +106,93 @@ public class menuClass {
 			}
 
 			case 3: {
-				int numCond = 0;
-				while (numCond != 3) {
-					System.out.println("Which fild to update? \n1. first name \n2. last name \n3. back to main manu");
-					int fild = sc.nextInt();
-					sc.nextLine();
-					switch (fild) {
-					case 1: {
-						System.out.println("what is the ID of the name that you whant to change?");
-						int id = sc.nextInt();
-						sc.nextLine();
 
-						System.out.println("what is the NEW NAME?");
-						String newName = sc.next();
-						sc.nextLine();
+				System.out.println("insert a word from a movie name");
+				String serchPartWord = sc.next();
+				String insertSQL = "SELECT * FROM film WHERE title LIKE ?";
+				PreparedStatement statement = null;
+				int mainID = 0, counter = 0;
+				String name = "";
+				try {
+					statement = conn.prepareStatement(insertSQL);
+					statement.setString(1, "%" + serchPartWord + "%");
 
-						Statement statement;
-						try {
-							statement = conn.createStatement();
-							String insertSQL = "UPDATE actor SET first_name = '" + newName + "' WHERE" + " actor_id = "
-									+ id;
-							System.out.println(insertSQL);
-							statement.addBatch(insertSQL);
-
-							int rowsAffected = statement.executeUpdate(insertSQL);
-							System.out.println(rowsAffected + " row(s) updated");
-
-						} catch (SQLException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						break;
-					}
-
-					case 2: {
-						System.out.println("what is the ID of the LAST name that you whant to change?");
-						int id = sc.nextInt();
-						sc.nextLine();
-
-						System.out.println("what is the NEW LAST NAME?");
-						String newLastName = sc.next();
-						sc.nextLine();
-
-						Statement statement;
-						try {
-							statement = conn.createStatement();
-							String updateSQL = "UPDATE actor SET last_name = '" + newLastName + "' WHERE"
-									+ " actor_id = " + id;
-							statement.addBatch(updateSQL);
-
-							int rowsAffected = statement.executeUpdate(updateSQL);
-							System.out.println(rowsAffected + " row(s) updated");
-
-						} catch (SQLException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						break;
-					}
-					case 3: {
-						System.out.println("BACK TO MENU");
-						numCond = 3;
-						break;
-					}
-					}
+				} catch (SQLException e) {
+					e.printStackTrace();
 				}
-			}
+				try {
+					ResultSet resultSet = statement.executeQuery();
+					while (resultSet.next()) {
+						counter++;
+						int id = resultSet.getInt("film_id");
+						name = resultSet.getString("title");
+						System.out.println("ID:" + id + ", " + name);
+						mainID = id;
+					}
+				} catch (SQLException e) {
+
+					e.printStackTrace();
+				}
+				if (counter == 0) {
+					System.out.println("Sorry! there is no movie with this word..");
+					break;
+				}
+
+				if (counter > 1) {
+					System.out.print("please enter your movie id: ");
+					mainID = sc.nextInt();
+					sc.nextLine();
+				}
+				counter = 0;
+				String newSQL = "SELECT film.title, actor.first_name, actor.last_name, actor.actor_id FROM film JOIN film_actor ON film.film_id = film_actor.film_id JOIN actor ON actor.actor_id = film_actor.actor_id WHERE film.film_id=? ";
+				try {
+					statement = conn.prepareStatement(newSQL);
+					statement.setInt(1, mainID);
+					ResultSet resultSet = statement.executeQuery();
+					System.out.println("\nhere is all the players that play at the movie:");
+					while (resultSet.next()) {
+						counter++;
+						int actor_id = resultSet.getInt("actor_id");
+						String FName = resultSet.getNString("first_name");
+						String LName = resultSet.getNString("last_name");
+						System.out.printf("ID:%d, %s %s\n", actor_id, FName, LName);
+						mainID = actor_id;
+					}
+
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				if (counter == 0) {
+					System.out.println("Sorry! there is no players in this movie..");
+					break;
+				}
+
+				if (counter > 1) {
+					System.out.print("please enter your actor id: ");
+					mainID = sc.nextInt();
+				}
+				sc.nextLine();
+				counter = 0;
+				System.out.print("\nenter a new first name:");
+				String NFName = sc.nextLine();
+
+				System.out.print("enter a new last name:");
+				String NLName = sc.nextLine();
+
+				String UpdateSQL = "UPDATE actor SET first_name = '" + NFName + "'" + ", last_name='" + NLName
+						+ "' WHERE actor_id =" + mainID;
+				try {
+					statement = conn.prepareStatement(UpdateSQL);
+					int rowsAffected = statement.executeUpdate(UpdateSQL);
+					System.out.println(rowsAffected + " row(s) updated");
+
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+
+				mainID = 0;
 				break;
+			}
 			case 4: {
 
 				System.out.println(
@@ -212,9 +233,47 @@ public class menuClass {
 					}
 
 				} else if (numType == 2) {
-					// update case
+					System.out.print("Enter an SQL INSERT statement: ");
+					String query = sc.nextLine();
+
+					try {
+						PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+
+						int status = stmt.executeUpdate();
+						if (status > 0) {
+							System.out.println("Insert statement executed successfully, rows affected: " + status);
+							ResultSet rs = stmt.getGeneratedKeys();
+							while (rs.next()) {
+								System.out.println("Generated key: " + rs.getString(1));
+							}
+						} else {
+							System.out.println("Insert statement failed to execute");
+						}
+					} catch (SQLException e) {
+						System.err.println("Invalid statement: " + e.getMessage());
+					}
 				} else if (numType == 3) {
-					// insert case
+
+					System.out.print("Enter an SQL UPDATE statement: ");
+					String query = sc.nextLine();
+
+					try {
+						PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+
+						int status = stmt.executeUpdate();
+						if (status > 0) {
+							System.out.println("Insert statement executed successfully, rows affected: " + status);
+							ResultSet rs = stmt.getGeneratedKeys();
+							while (rs.next()) {
+								System.out.println("Generated key: " + rs.getString(1));
+							}
+						} else {
+							System.out.println("Insert statement failed to execute");
+						}
+					} catch (SQLException e) {
+						System.err.println("Invalid statement: " + e.getMessage());
+					}
+
 				} else if (numType == 4) {
 					System.out.println("\nyou back to main manu");
 
@@ -236,7 +295,7 @@ public class menuClass {
 				char choose = sc.nextLine().charAt(0);
 				switch (choose) {
 				case 'a': {
-					System.out.println("what is the word that you what to serch whit?");
+					System.out.println("insert a word from a movie name");
 					String serchPartWord = sc.next();
 					String insertSQL = "SELECT * FROM film WHERE title LIKE ?";
 					PreparedStatement statement = null;
